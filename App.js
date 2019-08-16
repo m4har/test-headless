@@ -6,7 +6,7 @@
  * @flow
  */
 
-import React, {Fragment} from 'react';
+import React, {Fragment, Component} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -15,6 +15,7 @@ import {
   Text,
   StatusBar,
 } from 'react-native';
+import firebase, {RemoteMessage} from 'react-native-firebase';
 
 import {
   Header,
@@ -24,7 +25,42 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
-const App = () => {
+class App extends Component {
+  constructor(props){
+    super(props)
+    this.checkPermision()
+  }
+  componentDidMount() {
+    this.messageListener = firebase.messaging().onMessage((message: RemoteMessage) => {
+        // Process your message as required
+        console.log('app.js',{message})
+    });
+}
+
+componentWillUnmount() {
+    this.messageListener();
+}
+  async getToken(){
+    const fcmToken = await firebase.messaging().getToken();
+    console.log({fcmToken})
+  }
+  async checkPermision(){
+    const enabled = await firebase.messaging().hasPermission();
+    if (enabled) {
+        this.getToken()
+    } else {
+        this.getPermision()
+    }
+  }
+  async getPermision(){
+    try {
+      await firebase.messaging().requestPermission();
+      this.getToken()
+  } catch (error) {
+     this.checkPermision()
+  }
+  }
+  render(){
   return (
     <Fragment>
       <StatusBar barStyle="dark-content" />
@@ -70,6 +106,7 @@ const App = () => {
       </SafeAreaView>
     </Fragment>
   );
+};
 };
 
 const styles = StyleSheet.create({
